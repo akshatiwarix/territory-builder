@@ -6,12 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "sweep": "vite-node -c vitest.config.mts scripts/sweep.mts",
+    "corpus": "vite-node -c vitest.config.mts scripts/corpus.mts",
+    "frontier": "vite-node -c vitest.config.mts scripts/frontier.mts"
   },
   "dependencies": {
     "next": "16.3.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -21,6 +28,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-node": "^6.0.0",
+    "vitest": "^4.1.10"
   }
 }
