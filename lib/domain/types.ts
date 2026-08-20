@@ -210,8 +210,8 @@ export type Plan = {
 export type Infeasible = {
   kind: "infeasible";
   reason:
-    | "capacity-below-universe"
-    | "capacity-above-universe"
+    | "capacity-min-too-high"
+    | "capacity-max-too-low"
     | "cell-has-no-eligible-rep"
     | "pin-conflicts-with-exclusion"
     | "no-reps";

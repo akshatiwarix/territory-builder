@@ -276,11 +276,13 @@ function plantWhale(accounts: Account[], seed: number): void {
     const total = accounts.reduce((sum, a) => sum + a.potentialUsd, 0);
     const cellTotal = inCell.reduce((sum, a) => sum + a.potentialUsd, 0);
     if (cellTotal / total >= WHALE_TARGET_SHARE) break;
+    // Potential only. The whale is a claim about the potential axis, and
+    // inflating its pipeline alongside would make the same lump bind on two
+    // axes at once — the pipeline floor would then be the whale's doing rather
+    // than the protection rule's, and the two pathologies would stop being
+    // separable in the cost attribution.
     for (const account of inCell) {
       account.potentialUsd = round(account.potentialUsd * rng.range(1.06, 1.14), 100);
-      if (account.openPipelineUsd > 0) {
-        account.openPipelineUsd = round(account.openPipelineUsd * 1.08, 100);
-      }
     }
   }
 }
@@ -296,11 +298,29 @@ function plantProtectedBook(accounts: Account[], seed: number): void {
   const rng = new Rng(derive(seed, "protected"));
 
   // The largest deals in a book are the ones that reach negotiation, so the
-  // protected set is the top of the rep's book rather than a random slice.
-  const owned = accounts
+  // protected set is the top of the rep's book rather than a random slice — but
+  // capped per industry and segment, because a real rep's open quarter spans
+  // their whole book rather than piling into one corner of it.
+  //
+  // The spread is what makes the pathology legible. Late-stage value bunched
+  // into two cells would be immovable whether or not protection existed, so
+  // lifting the constraint would change nothing and the cost attribution would
+  // correctly charge protection nothing. Spread across the lattice, the same
+  // value is splittable in principle and locked in practice, which is exactly
+  // what a protection rule costs.
+  const perCellCap = 2;
+  const taken = new Map<string, number>();
+  const owned: Account[] = [];
+  for (const account of accounts
     .filter((a) => a.currentOwnerId === PROTECTED_REP)
-    .sort((a, b) => b.potentialUsd - a.potentialUsd)
-    .slice(0, PROTECTED_ACCOUNT_CAP);
+    .sort((a, b) => b.potentialUsd - a.potentialUsd)) {
+    if (owned.length >= PROTECTED_ACCOUNT_CAP) break;
+    const key = `${account.industry}|${account.segment}`;
+    const used = taken.get(key) ?? 0;
+    if (used >= perCellCap) continue;
+    taken.set(key, used + 1);
+    owned.push(account);
+  }
 
   for (const account of owned) {
     account.openOppStage = rng.next() < 0.62 ? "negotiation" : "commit";
