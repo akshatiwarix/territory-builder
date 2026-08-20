@@ -1,26 +1,656 @@
 @import "tailwindcss";
 
+/*
+ * Plat-survey drafting.
+ *
+ * Territory carving borrows its entire vocabulary from land surveying — parcels,
+ * boundaries, patches, "the carve" — so the console is drawn like a plat: chalk
+ * line work on drafting ground, a title block for the run parameters, and
+ * hatching where the land cannot be built on.
+ *
+ * Three colours carry meaning and nothing carries decoration. Verdigris is what
+ * stays. Ochre is what moves. Oxide is the region no plan can enter.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ground: #0e181c;
+  --panel: #14232a;
+  --panel-2: #1a2c34;
+  --line: #2a4149;
+  --line-bright: #3d5c66;
+
+  --chalk: #e8f0f1;
+  --muted: #8aa3ab;
+  --faint: #5c7580;
+
+  --kept: #63b4a0;
+  --moved: #d68a3c;
+  --oxide: #a05555;
+
+  --step-0: 0.6875rem;
+  --step-1: 0.8125rem;
+  --step-2: 0.9375rem;
+  --step-3: 1.375rem;
+  --step-4: 2.25rem;
+  --step-5: 3.75rem;
+
+  --gutter: clamp(1rem, 3vw, 2.5rem);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--ground);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--ground);
+  color: var(--chalk);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-size: var(--step-1);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Drafting-film grain: a single fixed layer, not a per-element effect. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(232, 240, 241, 0.035) 1px,
+    transparent 0
+  );
+  background-size: 4px 4px;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 var(--gutter) 6rem;
+}
+
+.mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- *
+ * Title block — the run parameters, drawn where a surveyor signs.
+ * ---------------------------------------------------------------- */
+
+.titleblock {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1.5rem;
+  align-items: end;
+  border-bottom: 1px solid var(--line-bright);
+  padding: 2.5rem 0 1rem;
+  margin-bottom: 2rem;
+}
+
+.titleblock h1 {
+  font-size: var(--step-4);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.titleblock .sub {
+  color: var(--muted);
+  font-size: var(--step-1);
+  margin-top: 0.5rem;
+  max-width: 46ch;
+}
+
+.titleblock .sub a {
+  color: var(--kept);
+}
+
+.specs {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 0.1rem 1.5rem;
+  font-size: var(--step-0);
+}
+
+.specs dt {
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.specs dd {
+  margin: 0;
+  text-align: right;
+  color: var(--chalk);
+}
+
+/* ---------------------------------------------------------------- *
+ * Sections
+ * ---------------------------------------------------------------- */
+
+.section {
+  margin-top: 3.5rem;
+}
+
+.section > header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.section > header h2 {
+  font-size: var(--step-2);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.section > header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--step-1);
+}
+
+.note {
+  color: var(--faint);
+  font-size: var(--step-0);
+  margin: 0.75rem 0 0;
+}
+
+/* ---------------------------------------------------------------- *
+ * The claim — floor, achieved, and the void between them.
+ * ---------------------------------------------------------------- */
+
+.claim {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  margin-top: 1.5rem;
+}
+
+.claim > div {
+  background: var(--panel);
+  padding: 1.1rem 1.25rem 1.25rem;
+}
+
+.claim .k {
+  font-size: var(--step-0);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.claim .v {
+  font-size: var(--step-5);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin-top: 0.4rem;
+}
+
+.claim .d {
+  color: var(--muted);
+  font-size: var(--step-0);
+  margin-top: 0.6rem;
+  line-height: 1.45;
+}
+
+.claim .unknown .v {
+  color: var(--faint);
+}
+
+/* ---------------------------------------------------------------- *
+ * Carve
+ * ---------------------------------------------------------------- */
+
+.rep {
+  border-bottom: 1px solid var(--line);
+  padding: 0.9rem 0;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.rep:first-child {
+  border-top: 1px solid var(--line);
+}
+
+.rep .who {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.rep .who .id {
+  display: block;
+  color: var(--faint);
+  font-size: var(--step-0);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.rule {
+  font-size: var(--step-1);
+  line-height: 1.55;
+  color: var(--chalk);
+  word-break: break-word;
+}
+
+.rule .plus {
+  color: var(--kept);
+}
+
+.rule .minus {
+  color: var(--moved);
+}
+
+.rep-bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.6rem 1.5rem;
+  margin-top: 0.7rem;
+}
+
+/* ---------------------------------------------------------------- *
+ * Bars — the signature. Hatch is unreachable, dots are unknown.
+ * ---------------------------------------------------------------- */
+
+.bar {
+  display: block;
+}
+
+.bar .label {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--step-0);
+  color: var(--faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.bar .label .num {
+  color: var(--muted);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* ---------------------------------------------------------------- *
+ * Tables
+ * ---------------------------------------------------------------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--step-1);
+}
+
+th {
+  text-align: left;
+  font-size: var(--step-0);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 400;
+  padding: 0 0.75rem 0.4rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+td {
+  padding: 0.42rem 0.75rem 0.42rem 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: baseline;
+}
+
+td.num,
+th.num {
+  text-align: right;
+  padding-right: 0;
+}
+
+tr.binding td {
+  color: var(--chalk);
+}
+
+tr.binding td:first-child::before {
+  content: "▸ ";
+  color: var(--oxide);
+}
+
+td.dim {
+  color: var(--faint);
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+/* ---------------------------------------------------------------- *
+ * Controls
+ * ---------------------------------------------------------------- */
+
+.controls {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: color-mix(in srgb, var(--ground) 94%, transparent);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--line);
+  padding: 0.85rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2rem;
+  align-items: flex-start;
+}
+
+.control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.control > .k {
+  font-size: var(--step-0);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.segmented {
+  display: flex;
+  border: 1px solid var(--line-bright);
+}
+
+.segmented button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--line-bright);
+  color: var(--muted);
+  font: inherit;
+  font-family: var(--font-mono), monospace;
+  font-size: var(--step-0);
+  padding: 0.28rem 0.62rem;
+  cursor: pointer;
+}
+
+.segmented button:last-child {
+  border-right: 0;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--chalk);
+  color: var(--ground);
+}
+
+.segmented button:hover:not([aria-pressed="true"]) {
+  color: var(--chalk);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--step-1);
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toggle input {
+  accent-color: var(--kept);
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.toggle:hover {
+  color: var(--chalk);
+}
+
+.slider {
+  display: grid;
+  grid-template-columns: 5.5rem 7rem 2.5rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--step-0);
+  color: var(--muted);
+}
+
+.slider input {
+  accent-color: var(--moved);
+  width: 100%;
+}
+
+.slider .v {
+  text-align: right;
+  color: var(--chalk);
+}
+
+.linkbar {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-left: auto;
+  font-size: var(--step-0);
+}
+
+.linkbar a,
+.linkbar button {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--kept);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--kept) 40%, transparent);
+  cursor: pointer;
+}
+
+.linkbar a:hover,
+.linkbar button:hover {
+  border-bottom-color: var(--kept);
+}
+
+/* ---------------------------------------------------------------- *
+ * Refusal
+ * ---------------------------------------------------------------- */
+
+.refusal {
+  border: 1px solid var(--oxide);
+  background: color-mix(in srgb, var(--oxide) 12%, var(--panel));
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.refusal .k {
+  font-size: var(--step-0);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--oxide);
+}
+
+.refusal p {
+  margin: 0.5rem 0 0;
+  max-width: 70ch;
+}
+
+/* ---------------------------------------------------------------- *
+ * Matrix
+ * ---------------------------------------------------------------- */
+
+.matrix {
+  border-collapse: collapse;
+  font-size: var(--step-0);
+}
+
+.matrix td,
+.matrix th {
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.5rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.matrix th {
+  color: var(--faint);
+  text-transform: none;
+  letter-spacing: 0.05em;
+}
+
+.matrix th[scope="row"] {
+  text-align: left;
+}
+
+.matrix td.held {
+  color: var(--kept);
+}
+
+.matrix td.zero {
+  color: var(--line-bright);
+}
+
+/* ---------------------------------------------------------------- *
+ * Frontier
+ * ---------------------------------------------------------------- */
+
+.frontier-dot {
+  cursor: pointer;
+  transition: r 120ms ease;
+}
+
+.frontier-dot:hover {
+  stroke: var(--chalk);
+  stroke-width: 1.5;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  font-size: var(--step-0);
+  color: var(--muted);
+  margin-top: 0.85rem;
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.swatch {
+  width: 0.75rem;
+  height: 0.75rem;
+  display: inline-block;
+  border: 1px solid var(--line-bright);
+}
+
+/* ---------------------------------------------------------------- */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--kept);
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .titleblock {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .rep {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .specs {
+    justify-content: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------- *
+ * Rules — the product, and the granularity trap arriving in person.
+ * ---------------------------------------------------------------- */
+
+.rule-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: var(--step-0);
+  color: var(--faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+
+.rule-body {
+  margin: 0;
+  font-size: var(--step-1);
+  line-height: 1.55;
+  color: var(--chalk);
+}
+
+.rule details > summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--muted);
+}
+
+.rule details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.rule details > summary::after {
+  content: " ▸";
+  color: var(--kept);
+}
+
+.rule details[open] > summary::after {
+  content: " ▾";
+}
+
+.rule details[open] > summary {
+  color: var(--faint);
+}
+
+.rule .rule-full {
+  margin-top: 0.5rem;
+  padding-left: 0.85rem;
+  border-left: 1px solid var(--line-bright);
+  color: var(--chalk);
+}
+
+.bar-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--step-0);
+  color: var(--faint);
+  margin-top: 0.25rem;
 }
