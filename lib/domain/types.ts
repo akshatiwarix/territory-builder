@@ -227,6 +227,7 @@ export type Infeasible = {
     | "capacity-min-too-high"
     | "capacity-max-too-low"
     | "capacity-min-unreachable-at-this-granularity"
+    | "exclusion-inert-at-this-granularity"
     | "cell-has-no-eligible-rep"
     | "pin-conflicts-with-exclusion"
     | "no-reps";

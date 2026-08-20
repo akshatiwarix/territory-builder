@@ -1,5 +1,6 @@
 import {
   AXES,
+  dimensionsForLevel,
   stageAtLeast,
   type Account,
   type Axis,
@@ -70,6 +71,29 @@ export function prepare(universe: Universe, config: Config): PreparationResult {
           `${capacity.max * reps.length} accounts; the universe has ${universe.accounts.length}.`,
       );
     }
+  }
+
+  // --- exclusions the lattice cannot express --------------------------------
+  //
+  // An exclusion names a dimension; a cell can only be restricted by a dimension
+  // the lattice actually contains. Ask for "rep-05 never sells Enterprise" at a
+  // granularity built from industry alone and there is nothing to match on — so
+  // the rule does nothing, and rep-05 gets Enterprise accounts anyway.
+  //
+  // That is a silently dropped constraint, which is the failure this whole repo
+  // objects to, so it is refused by name instead. The sweep found this: 56 plans
+  // violated an exclusion that the tool had quietly ignored.
+  const activeDimensions = new Set<string>(dimensionsForLevel(config.granularity));
+  const inert = config.constraints.exclusions.find(
+    (exclusion) => !activeDimensions.has(exclusion.dimension),
+  );
+  if (inert) {
+    return infeasible(
+      "exclusion-inert-at-this-granularity",
+      `${inert.repId} is excluded from ${inert.dimension} = ${inert.value}, but the ` +
+        `level-${config.granularity} lattice is not cut along ${inert.dimension}, so no ` +
+        `cell can honour it. Refine the granularity or drop the rule.`,
+    );
   }
 
   // --- exceptions -----------------------------------------------------------
@@ -186,10 +210,9 @@ export function prepare(universe: Universe, config: Config): PreparationResult {
 }
 
 /**
- * An exclusion whose dimension is not part of the lattice at this granularity
- * cannot restrict any cell — there is nothing to match on. That is a real and
- * confusing property of the model, so it is surfaced rather than left for the
- * user to discover from a plan that ignored their rule.
+ * The exclusions a given granularity cannot express. `prepare` refuses when this
+ * is non-empty; the console uses it to say which control to change before the
+ * user has to read an error.
  */
 export function inertExclusions(config: Config): Config["constraints"]["exclusions"] {
   const active = new Set<string>(

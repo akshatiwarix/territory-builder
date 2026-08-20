@@ -138,6 +138,38 @@ describe("constraints", () => {
     );
   });
 
+  it("refuses an exclusion the lattice cannot express, rather than ignoring it", () => {
+    // The sweep found this: at level 1 the lattice is cut by industry alone, so
+    // a segment exclusion matches no cell and was being silently dropped —
+    // fifty-six plans handed Enterprise accounts to reps forbidden from selling
+    // to them. A dropped constraint is the failure this repo objects to.
+    const result = buildPlan(meridian, {
+      ...defaultConfig("meridian"),
+      granularity: 1,
+      constraints: {
+        ...defaultConfig("meridian").constraints,
+        exclusions: [{ repId: "rep-05", dimension: "segment", value: "Enterprise" }],
+      },
+    });
+    expect(result.kind).toBe("infeasible");
+    if (result.kind === "infeasible") {
+      expect(result.reason).toBe("exclusion-inert-at-this-granularity");
+      expect(result.detail).toContain("Refine the granularity");
+    }
+  });
+
+  it("accepts the same exclusion once the lattice is cut along that dimension", () => {
+    const result = buildPlan(meridian, {
+      ...defaultConfig("meridian"),
+      granularity: 3,
+      constraints: {
+        ...defaultConfig("meridian").constraints,
+        exclusions: [{ repId: "rep-05", dimension: "segment", value: "Enterprise" }],
+      },
+    });
+    expect(result.kind).toBe("plan");
+  });
+
   it("refuses a minimum no cell partition can reach, by name", () => {
     const result = buildPlan(meridian, {
       ...defaultConfig("meridian"),
