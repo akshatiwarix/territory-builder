@@ -10,6 +10,7 @@ import {
   type Universe,
 } from "@/lib/domain";
 import { prepare, type Preparation } from "@/lib/setup";
+import { churnFloorOf } from "./churn";
 
 /**
  * The certified floor.
@@ -248,5 +249,9 @@ export function constraintCosts(
 
 export function computeFloor(universe: Universe, prep: Preparation): Floor {
   const perAxis = floorOf(prep, prep.config);
-  return { perAxis, costs: constraintCosts(universe, prep.config, perAxis) };
+  return {
+    perAxis,
+    costs: constraintCosts(universe, prep.config, perAxis),
+    churn: churnFloorOf(prep),
+  };
 }

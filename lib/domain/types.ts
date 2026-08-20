@@ -185,9 +185,23 @@ export type ConstraintCost = {
   cost: Record<Axis, number>;
 };
 
+/**
+ * A lower bound on churn, which exists for the same reason the imbalance floor
+ * does. The book on the ground was not cut along cell lines, so no rule-based
+ * plan can reproduce it — some pipeline has to change hands before the
+ * optimizer expresses a single preference.
+ */
+export type ChurnFloor = {
+  minPipelineMovedUsd: number;
+  fraction: number;
+  /** Accounts that no rule at this granularity can leave where they are. */
+  minAccountsMoved: number;
+};
+
 export type Floor = {
   perAxis: Record<Axis, AxisBounds>;
   costs: ConstraintCost[];
+  churn: ChurnFloor;
 };
 
 export type Plan = {
@@ -212,6 +226,7 @@ export type Infeasible = {
   reason:
     | "capacity-min-too-high"
     | "capacity-max-too-low"
+    | "capacity-min-unreachable-at-this-granularity"
     | "cell-has-no-eligible-rep"
     | "pin-conflicts-with-exclusion"
     | "no-reps";
